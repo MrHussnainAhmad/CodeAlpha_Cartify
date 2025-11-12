@@ -12,8 +12,12 @@ export interface Order {
   shippingCost: number;
   totalAmount: number;
   currency: string;
+  // UI payment-ish status
   status: 'paid' | 'failed' | 'canceled';
   paymentStatus: 'succeeded' | 'failed' | 'canceled';
+  // New: fulfillment status for logistics
+  fulfillmentStatus: 'Processing' | 'On Way' | 'About to Deliver' | 'Delivered' | 'Canceled';
+  dbStatus: string; // underlying DB code (e.g. processing, on_way, about_to_deliver, delivered)
   customerEmail: string;
   billingAddress?: any;
   shippingAddress?: any;
@@ -81,6 +85,23 @@ export async function updateOrderStatus(orderId: string, status: string, payment
     return response.ok;
   } catch (error) {
     console.error('Error updating order status:', error);
+    return false;
+  }
+}
+
+// Update fulfillment (logistics) status stored in DB order.status
+export async function updateFulfillmentStatus(orderId: string, dbStatus: 'processing' | 'on_way' | 'about_to_deliver' | 'delivered' | 'cancelled'): Promise<boolean> {
+  try {
+    const response = await fetch(`/api/orders/${orderId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ status: dbStatus }),
+    });
+    return response.ok;
+  } catch (error) {
+    console.error('Error updating fulfillment status:', error);
     return false;
   }
 }

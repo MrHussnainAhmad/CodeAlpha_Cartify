@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { stripe, toCents } from '@/lib/stripe';
+import { getServerStripe, toCents } from '@/lib/stripe';
 import { auth } from '@clerk/nextjs/server';
 
 export async function POST(request: NextRequest) {
@@ -38,7 +38,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create payment intent
+// Create payment intent
+    const stripe = getServerStripe();
     const paymentIntent = await stripe.paymentIntents.create({
       amount: toCents(totalAmount),
       currency: 'usd',

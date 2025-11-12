@@ -69,7 +69,13 @@ const Comparison = () => {
 
     const handleCompare = () => {
         if (selectedProduct1 && selectedProduct2) {
-            const slugs = [selectedProduct1.slug?.current, selectedProduct2.slug?.current].filter(Boolean);
+            // Handle both string and object slug formats
+            const getSlug = (product: Product) => {
+                if (typeof product.slug === 'string') return product.slug;
+                return product.slug?.current;
+            };
+            
+            const slugs = [getSlug(selectedProduct1), getSlug(selectedProduct2)].filter(Boolean);
             if (slugs.length >= 2) {
                 router.push(`/compare?products=${slugs.join(',')}`);
             }

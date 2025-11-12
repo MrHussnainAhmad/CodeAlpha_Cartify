@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Toaster } from 'react-hot-toast';
 import { AlertModalProvider } from '@/components/ui/alert-modal';
 import { AddressProvider } from '@/contexts/AddressContext';
@@ -15,14 +15,20 @@ interface ClientProvidersProps {
 
 export const ClientProviders: React.FC<ClientProvidersProps> = ({ children, webData }) => {
   const pathname = usePathname();
+  const [isClient, setIsClient] = useState(false);
   const isAdminPath = pathname.startsWith('/admin');
+
+  // Ensure client-side rendering is complete before showing Header/Footer
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   return (
     <AlertModalProvider>
       <AddressProvider>
-        {!isAdminPath && <Header webData={webData} logo={webData?.logo} />}
+        {isClient && !isAdminPath && <Header webData={webData} logo={webData?.logo} />}
         {children}
-        {!isAdminPath && <Footer webData={webData} logo={webData?.logo} />}
+        {isClient && !isAdminPath && <Footer webData={webData} logo={webData?.logo} />}
         <Toaster
           position="bottom-right"
           toastOptions={{

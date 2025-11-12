@@ -28,7 +28,7 @@ const singleProductPage = async ({
           <ul className="list-disc pl-5">
             {allProducts?.map((p: any) => (
               <li key={p._id}>
-                <strong>{p.name}</strong> - slug: {p.slug?.current || 'No slug'}
+                <strong>{p.name}</strong> - slug: {typeof p.slug === 'string' ? p.slug : (p.slug?.current || 'No slug')}
               </li>
             ))}
           </ul>

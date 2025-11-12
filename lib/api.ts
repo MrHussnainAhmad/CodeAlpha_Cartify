@@ -76,7 +76,10 @@ export const getAllBrands = async () => {
 
 export const getProductBySlug = async (slug: string) => {
   try {
-    const response = await fetch(`${BASE_URL}/api/products/${slug}`);
+    const response = await fetch(`${BASE_URL}/api/products/${encodeURIComponent(slug)}`, { cache: 'no-store' });
+    if (response.status === 404) {
+      return null; // allow page to render graceful not-found UI
+    }
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -90,7 +93,7 @@ export const getProductBySlug = async (slug: string) => {
 
 export const searchProducts = async (searchTerm: string) => {
   try {
-    const response = await fetch(`${BASE_URL}/api/products/search?term=${encodeURIComponent(searchTerm)}`);
+    const response = await fetch(`${BASE_URL}/api/products?searchTerm=${encodeURIComponent(searchTerm)}`);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -147,7 +150,7 @@ export const getDealProducts = async () => {
 export const getWebData = async () => {
   try {
     console.log("Fetching web data from /api/webdata...");
-    const response = await fetch(`${BASE_URL}/api/webdata`);
+    const response = await fetch(`${BASE_URL}/api/webdata`, { cache: 'no-store' });
     console.log("Web data API response status:", response.status);
     if (!response.ok) {
       const errorText = await response.text();
@@ -156,8 +159,7 @@ export const getWebData = async () => {
     }
     const jsonResponse = await response.json();
     console.log("Web data API JSON response:", jsonResponse);
-    const { data } = jsonResponse;
-    return data;
+    return jsonResponse;
   } catch (error) {
     console.error("Error fetching web data:", error);
     return null;

@@ -8,19 +8,19 @@ import { useRouter } from "next/navigation";
 interface SearchProduct {
   _id: string;
   name: string;
-  slug: { current: string };
+  slug: string | { current: string }; // Support both MongoDB and Sanity formats
   originalPrice: number;
   discount?: number;
   images?: Array<{ asset: { url: string } }>;
   category?: {
     _id: string;
     name: string;
-    slug: { current: string };
+    slug: string | { current: string };
   };
   brand?: {
     _id: string;
     name: string;
-    slug: { current: string };
+    slug: string | { current: string };
   };
 }
 
@@ -63,7 +63,8 @@ const Searchbar = () => {
   }, [search, searchProducts]);
 
   const handleProductClick = (product: SearchProduct) => {
-    router.push(`/product/${product.slug.current}`);
+    const slugString = typeof product.slug === 'string' ? product.slug : product.slug.current;
+    router.push(`/product/${slugString}`);
     setShowResults(false);
     setShowSearch(false);
     setSearch("");

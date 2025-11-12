@@ -108,18 +108,20 @@ const useCartStore = create<StoreState>()(  persist(
       getItemPrice: (item: CartItem) => {
         const originalPrice = item.product.originalPrice || 0;
         
-        // Check if product is on deal
-        if (item.product.isOnDeal && item.product.dealPercentage) {
-          // For deal products, only apply deal discount
-          return originalPrice - (originalPrice * item.product.dealPercentage / 100);
-        }
-        
-        // For regular products, apply regular discount first
+        // First apply regular product discount if any
         const productDiscount = item.product.discount || 0;
         let price = originalPrice - (originalPrice * productDiscount / 100);
         
-        // Apply coupon discount if any and product is not on deal
-        if (item.appliedCoupon && !item.product.isOnDeal) {
+        // Check if product is on deal - apply deal percentage on the already-discounted price
+        if (item.product.isOnDeal && item.product.dealPercentage) {
+          // Deal discount applies on top of regular discount (compound)
+          price = price - (price * item.product.dealPercentage / 100);
+          // Deal products cannot use coupons, so return here
+          return Math.max(0, price);
+        }
+        
+        // Apply coupon discount if any (only for non-deal products)
+        if (item.appliedCoupon) {
           price = price - (price * item.appliedCoupon.discount / 100);
         }
         

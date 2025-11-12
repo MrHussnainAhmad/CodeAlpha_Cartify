@@ -10,7 +10,12 @@ const OrderSchema = new mongoose.Schema({
     },
   ],
   total: { type: Number, required: true },
-  status: { type: String, enum: ['pending', 'processing', 'shipped', 'delivered', 'cancelled'], default: 'pending' },
+  // Fulfillment status (not payment) — broadened to support new states
+  status: { 
+    type: String, 
+    enum: ['pending', 'processing', 'on_way', 'about_to_deliver', 'shipped', 'delivered', 'cancelled'], 
+    default: 'pending' 
+  },
   shippingAddress: { type: mongoose.Schema.Types.ObjectId, ref: 'Address', required: true },
   createdAt: { type: Date, default: Date.now },
 });

@@ -30,10 +30,18 @@ const ProductDetails = ({ product }: ProductDetailsProps) => {
   const dealPercentage = product?.dealPercentage || 0;
   const regularDiscount = product?.discount || 0;
   
-  // Use deal discount if product is on deal, otherwise use regular discount
+  // Check if product is on deal
   const isOnDeal = product?.isOnDeal && dealPercentage > 0;
-  const effectiveDiscount = isOnDeal ? dealPercentage : regularDiscount;
-  const finalPrice = originalPrice - (originalPrice * effectiveDiscount / 100);
+  
+  // First apply regular discount, then apply deal discount on top if applicable
+  let finalPrice = originalPrice - (originalPrice * regularDiscount / 100);
+  if (isOnDeal) {
+    finalPrice = finalPrice - (finalPrice * dealPercentage / 100);
+  }
+  
+  // Calculate effective discount percentage for display
+  const totalDiscountAmount = originalPrice - finalPrice;
+  const effectiveDiscountPercent = originalPrice > 0 ? (totalDiscountAmount / originalPrice) * 100 : 0;
 
   const handleWishlist = () => {
     if (isWishlisted) {
@@ -112,13 +120,18 @@ const ProductDetails = ({ product }: ProductDetailsProps) => {
           }`}>
             ${finalPrice.toFixed(2)}
           </span>
-          {effectiveDiscount > 0 && (
+          {totalDiscountAmount > 0 && (
             <>
               <span className="text-xl text-gray-500 line-through">
                 ${originalPrice.toFixed(2)}
               </span>
               <Badge variant="destructive" className={isOnDeal ? "bg-red-600" : "bg-red-500"}>
-                -{effectiveDiscount}%{isOnDeal ? ' DEAL' : ''}
+                {isOnDeal && regularDiscount > 0 
+                  ? `-${regularDiscount}% + ${dealPercentage}% DEAL` 
+                  : isOnDeal 
+                    ? `-${dealPercentage}% DEAL`
+                    : `-${regularDiscount}%`
+                }
               </Badge>
             </>
           )}

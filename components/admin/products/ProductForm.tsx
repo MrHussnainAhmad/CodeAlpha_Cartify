@@ -123,6 +123,22 @@ const ProductForm: React.FC<ProductFormProps> = ({ initialData, onSuccess }) => 
 
     try {
       const values = formData;
+      
+      // Validate required fields
+      if (!values.description || values.description.trim() === '') {
+        toast.error('Description is required');
+        setError('Description is required');
+        setLoading(false);
+        return;
+      }
+      
+      if (!values.images || values.images.length === 0) {
+        toast.error('At least one image is required');
+        setError('At least one image is required');
+        setLoading(false);
+        return;
+      }
+      
       const price = values.originalPrice - (values.originalPrice * (values.discount || 0)) / 100;
 
       const productData = {
@@ -130,8 +146,8 @@ const ProductForm: React.FC<ProductFormProps> = ({ initialData, onSuccess }) => 
         price: price,
       };
 
-      const isEditing = !!values.id;
-      const apiUrl = isEditing ? `/api/products/${values.id}` : '/api/products';
+      const isEditing = !!values._id;
+      const apiUrl = isEditing ? `/api/products/${values._id}` : '/api/products';
       const httpMethod = isEditing ? 'PUT' : 'POST';
 
       const response = await axios({
@@ -141,10 +157,12 @@ const ProductForm: React.FC<ProductFormProps> = ({ initialData, onSuccess }) => 
       });
 
       toast.success(isEditing ? 'Product updated.' : 'Product created.');
-      router.push('/admin/products');
+      onSuccess();
     } catch (err: any) {
-      setError(err.message);
-      toast.error('Failed to save product.');
+      const errorMessage = err.response?.data?.error || err.message || 'Failed to save product';
+      setError(errorMessage);
+      toast.error(errorMessage);
+      console.error('Error saving product:', err);
     } finally {
       setLoading(false);
     }
@@ -164,8 +182,8 @@ const ProductForm: React.FC<ProductFormProps> = ({ initialData, onSuccess }) => 
         </div>
       </div>
       <div>
-        <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-        <textarea id="description" name="description" value={formData.description || ''} onChange={handleChange} rows={4} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
+        <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">Description *</label>
+        <textarea id="description" name="description" value={formData.description || ''} onChange={handleChange} rows={4} required className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
@@ -182,7 +200,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ initialData, onSuccess }) => 
         <input type="text" id="sku" name="sku" value={formData.sku || ''} onChange={handleChange} required className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500" />
       </div>
       <div>
-        <label htmlFor="images" className="block text-sm font-medium text-gray-700 mb-1">Images ({formData.images?.length || 0}/5)</label>
+        <label htmlFor="images" className="block text-sm font-medium text-gray-700 mb-1">Images * ({formData.images?.length || 0}/5 - At least 1 required)</label>
         <input 
           type="file" 
           id="images" 

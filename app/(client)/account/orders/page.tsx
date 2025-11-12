@@ -97,6 +97,9 @@ const OrdersPage = () => {
                         <CreditCard className="w-4 h-4" />
                         {order.currency.toUpperCase()} ${order.totalAmount.toFixed(2)}
                       </div>
+                      <div className="flex items-center gap-1">
+                        <span className="inline-block rounded bg-gray-100 px-2 py-0.5">{order.fulfillmentStatus}</span>
+                      </div>
                     </div>
                   </div>
                   <div className="flex-shrink-0">

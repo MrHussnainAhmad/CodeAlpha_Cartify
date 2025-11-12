@@ -16,31 +16,31 @@ const CoolLoader: React.FC<CoolLoaderProps> = ({
   showText = true 
 }) => {
   const sizeClasses = {
-    sm: 'w-16 h-16',
-    md: 'w-24 h-24',
-    lg: 'w-32 h-32',
-    xl: 'w-48 h-48',
+    sm: 'w-12 h-12 sm:w-16 sm:h-16',
+    md: 'w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24',
+    lg: 'w-20 h-20 sm:w-24 sm:h-24 md:w-32 md:h-32',
+    xl: 'w-28 h-28 sm:w-36 sm:h-36 md:w-48 md:h-48',
   };
 
   const iconSizes = {
-    sm: 'w-6 h-6',
-    md: 'w-8 h-8',
-    lg: 'w-12 h-12',
-    xl: 'w-16 h-16',
+    sm: 'w-4 h-4 sm:w-6 sm:h-6',
+    md: 'w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8',
+    lg: 'w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12',
+    xl: 'w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16',
   };
 
   const renderDefaultLoader = () => (
     <div className="flex flex-col items-center justify-center">
       <div className={`relative ${sizeClasses[size]}`}>
         {/* Rotating ring */}
-        <div className="absolute inset-0 border-4 border-orange-200 border-t-orange-600 rounded-full animate-spin"></div>
+        <div className="absolute inset-0 border-2 sm:border-3 md:border-4 border-orange-200 border-t-orange-600 rounded-full animate-spin"></div>
         
         {/* Center icon */}
         <div className="absolute inset-0 flex items-center justify-center">
           <ShoppingBag className={`${iconSizes[size]} text-orange-600`} />
         </div>
       </div>
-      {showText && <p className="mt-4 text-gray-600 animate-pulse">{text}</p>}
+      {showText && <p className="mt-3 sm:mt-4 text-sm sm:text-base text-gray-600 animate-pulse">{text}</p>}
     </div>
   );
 
@@ -57,7 +57,7 @@ const CoolLoader: React.FC<CoolLoaderProps> = ({
           <Heart className={`${iconSizes[size]} text-red-500 animate-pulse`} />
         </div>
       </div>
-      {showText && <p className="mt-4 text-gray-600 animate-pulse">{text}</p>}
+      {showText && <p className="mt-3 sm:mt-4 text-sm sm:text-base text-gray-600 animate-pulse">{text}</p>}
     </div>
   );
 
@@ -67,37 +67,37 @@ const CoolLoader: React.FC<CoolLoaderProps> = ({
         {/* Orbiting elements */}
         <div className="absolute inset-0 animate-spin-slow">
           <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2">
-            <div className="w-4 h-4 bg-blue-500 rounded-full"></div>
+            <div className="w-2 h-2 sm:w-3 sm:h-3 md:w-4 md:h-4 bg-blue-500 rounded-full"></div>
           </div>
           <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2">
-            <div className="w-4 h-4 bg-green-500 rounded-full"></div>
+            <div className="w-2 h-2 sm:w-3 sm:h-3 md:w-4 md:h-4 bg-green-500 rounded-full"></div>
           </div>
           <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2">
-            <div className="w-4 h-4 bg-purple-500 rounded-full"></div>
+            <div className="w-2 h-2 sm:w-3 sm:h-3 md:w-4 md:h-4 bg-purple-500 rounded-full"></div>
           </div>
           <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2">
-            <div className="w-4 h-4 bg-pink-500 rounded-full"></div>
+            <div className="w-2 h-2 sm:w-3 sm:h-3 md:w-4 md:h-4 bg-pink-500 rounded-full"></div>
           </div>
         </div>
         
         {/* Center icon */}
         <div className="absolute inset-0 flex items-center justify-center">
-          <div className="bg-white rounded-full shadow-lg p-4">
+          <div className="bg-white rounded-full shadow-lg p-2 sm:p-3 md:p-4">
             <Star className={`${iconSizes[size]} text-yellow-500 animate-spin-slow`} />
           </div>
         </div>
       </div>
-      {showText && <p className="mt-4 text-gray-600 animate-pulse">{text}</p>}
+      {showText && <p className="mt-3 sm:mt-4 text-sm sm:text-base text-gray-600 animate-pulse">{text}</p>}
     </div>
   );
 
   const renderWaveLoader = () => (
     <div className="flex flex-col items-center justify-center">
-      <div className="flex items-center justify-center space-x-2 mb-4">
+      <div className="flex items-center justify-center space-x-1 sm:space-x-2 mb-3 sm:mb-4">
         {[...Array(5)].map((_, i) => (
           <div
             key={i}
-            className="w-4 h-16 bg-gradient-to-t from-orange-500 to-orange-300 rounded-full animate-wave"
+            className="w-2 h-10 sm:w-3 sm:h-12 md:w-4 md:h-16 bg-gradient-to-t from-orange-500 to-orange-300 rounded-full animate-wave"
             style={{
               animationDelay: `${i * 0.1}s`,
             }}
@@ -105,8 +105,8 @@ const CoolLoader: React.FC<CoolLoaderProps> = ({
         ))}
       </div>
       <div className="flex items-center space-x-2">
-        <Zap className="w-6 h-6 text-orange-500 animate-pulse" />
-        {showText && <p className="text-gray-600 animate-pulse">{text}</p>}
+        <Zap className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-orange-500 animate-pulse" />
+        {showText && <p className="text-sm sm:text-base text-gray-600 animate-pulse">{text}</p>}
       </div>
     </div>
   );
@@ -125,7 +125,7 @@ const CoolLoader: React.FC<CoolLoaderProps> = ({
   };
 
   return (
-    <div className="flex items-center justify-center p-8">
+    <div className="flex items-center justify-center p-4 sm:p-6 md:p-8">
       {renderLoader()}
       
       <style jsx>{`

@@ -9,11 +9,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 const AdminOrdersPage = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  // Local pending selection for fulfillment status per order
+  const [pendingFulfillment, setPendingFulfillment] = useState<Record<string, string>>({});
+  const [savingFulfillment, setSavingFulfillment] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     const loadOrders = async () => {
       const fetchedOrders = await fetchAllOrders();
       setOrders(fetchedOrders);
+      // initialize pending fulfillment selections from fetched orders
+      const initial: Record<string, string> = {};
+      fetchedOrders.forEach(o => { initial[o._id] = (o.dbStatus || 'processing'); });
+      setPendingFulfillment(initial);
       setLoading(false);
     };
     loadOrders();
@@ -28,6 +35,41 @@ const AdminOrdersPage = () => {
           : order
       ));
     }
+  };
+
+  const toFulfillmentDisplay = (code: string) => {
+    switch ((code || '').toLowerCase()) {
+      case 'processing':
+      case 'pending':
+        return 'Processing';
+      case 'on_way':
+      case 'shipped':
+        return 'On Way';
+      case 'about_to_deliver':
+        return 'About to Deliver';
+      case 'delivered':
+        return 'Delivered';
+      case 'cancelled':
+      case 'canceled':
+        return 'Canceled';
+      default:
+        return 'Processing';
+    }
+  };
+
+  const handleFulfillmentUpdate = async (orderId: string, dbStatus: 'processing' | 'on_way' | 'about_to_deliver' | 'delivered' | 'cancelled') => {
+    const { updateFulfillmentStatus } = await import('@/lib/orders');
+    setSavingFulfillment(prev => ({ ...prev, [orderId]: true }));
+    const success = await updateFulfillmentStatus(orderId, dbStatus);
+    if (success) {
+      setOrders(orders.map(order => 
+        order._id === orderId 
+          ? { ...order, dbStatus, fulfillmentStatus: toFulfillmentDisplay(dbStatus) as any }
+          : order
+      ));
+      setPendingFulfillment(prev => ({ ...prev, [orderId]: dbStatus }));
+    }
+    setSavingFulfillment(prev => ({ ...prev, [orderId]: false }));
   };
 
   const getStatusBadgeColor = (status: string) => {
@@ -105,9 +147,9 @@ const AdminOrdersPage = () => {
                   </div>
                 </div>
                 
-                <div className="mt-4 flex gap-4">
+                <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="flex-1">
-                    <label className="text-sm font-medium">Update Status:</label>
+                    <label className="text-sm font-medium">Payment Summary:</label>
                     <Select
                       value={order.status}
                       onValueChange={(value) => handleStatusUpdate(order._id, value, order.paymentStatus)}
@@ -138,6 +180,33 @@ const AdminOrdersPage = () => {
                         <SelectItem value="canceled">Canceled</SelectItem>
                       </SelectContent>
                     </Select>
+                  </div>
+
+                  <div className="flex-1">
+                    <label className="text-sm font-medium">Order Status:</label>
+                    <Select
+                      value={pendingFulfillment[order._id] ?? order.dbStatus}
+                      onValueChange={(value) => setPendingFulfillment(prev => ({ ...prev, [order._id]: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder={order.fulfillmentStatus} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="processing">Processing</SelectItem>
+                        <SelectItem value="on_way">On Way</SelectItem>
+                        <SelectItem value="about_to_deliver">About to Deliver</SelectItem>
+                        <SelectItem value="delivered">Delivered</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <div className="mt-2">
+                      <Button
+                        onClick={() => handleFulfillmentUpdate(order._id, (pendingFulfillment[order._id] ?? order.dbStatus) as any)}
+                        disabled={!!savingFulfillment[order._id]}
+                        className="w-full"
+                      >
+                        {savingFulfillment[order._id] ? 'Updating...' : 'Update Status'}
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </CardContent>

@@ -51,7 +51,7 @@ const AdminLayout = async ({ children }: { children: React.ReactNode }) => {
         </nav>
       </aside>
       <main className="flex-1 flex flex-col">
-        <AdminHeader headerLogo={webData?.headerLogo} />
+        <AdminHeader logo={webData?.logo} />
         <div className="p-6 flex-1 overflow-auto">
           {children}
         </div>

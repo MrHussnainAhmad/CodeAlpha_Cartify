@@ -56,7 +56,10 @@ const ComparePage = () => {
   // Update URL when products change
   React.useEffect(() => {
     if (products.length > 0) {
-      const slugs = products.map(p => p.slug?.current).filter(Boolean).join(',');
+      const slugs = products.map(p => {
+        if (typeof p.slug === 'string') return p.slug;
+        return p.slug?.current;
+      }).filter(Boolean).join(',');
       const newUrl = `/compare?products=${slugs}`;
       router.replace(newUrl, { scroll: false });
     } else {
@@ -306,8 +309,15 @@ const getProductValue = (product: Product, key: string) => {
       
     case 'finalPrice':
       if (product.originalPrice) {
-        const discount = product.discount || 0;
-        const finalPrice = product.originalPrice - (product.originalPrice * discount / 100);
+        // First apply regular discount
+        const regularDiscount = product.discount || 0;
+        let finalPrice = product.originalPrice - (product.originalPrice * regularDiscount / 100);
+        
+        // If product is on deal, apply deal discount on top
+        if (product.isOnDeal && product.dealPercentage) {
+          finalPrice = finalPrice - (finalPrice * product.dealPercentage / 100);
+        }
+        
         return `$${finalPrice.toFixed(2)}`;
       }
       return '-';

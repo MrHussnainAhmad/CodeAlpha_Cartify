@@ -15,21 +15,21 @@ export const getStripe = () => {
   return stripePromise;
 };
 
-// Server-side Stripe instance
-const getServerStripe = () => {
-  const secretKey = process.env.NEXT_PUBLIC_STRIPE_SECRET_KEY;
+// Server-side Stripe instance (lazy, server-only)
+let stripeInstance: StripeServerSide | null = null;
+export const getServerStripe = () => {
+  if (stripeInstance) return stripeInstance;
+
+  const secretKey = process.env.STRIPE_SECRET_KEY;
   if (!secretKey) {
-    throw new Error('NEXT_PUBLIC_STRIPE_SECRET_KEY is not defined');
+    throw new Error('STRIPE_SECRET_KEY is not defined');
   }
   
-  return new StripeServerSide(secretKey, {
-    apiVersion: '2024-12-18.acacia',
-  });
+  stripeInstance = new StripeServerSide(secretKey);
+  return stripeInstance;
 };
 
-export const stripe = getServerStripe();
-
-// Stripe webhook signature verification
+// Stripe webhook signature verification (server-only)
 export const verifyStripeSignature = (
   rawBody: string,
   signature: string
@@ -40,6 +40,7 @@ export const verifyStripeSignature = (
     throw new Error('STRIPE_WEBHOOK_SECRET is not defined');
   }
   
+  const stripe = getServerStripe();
   return stripe.webhooks.constructEvent(rawBody, signature, webhookSecret);
 };
 

@@ -2,9 +2,7 @@
 export interface Product {
   _id: string;
   name: string;
-  slug: {
-    current: string;
-  };
+  slug: string | { current: string }; // Support both MongoDB (string) and Sanity (object) formats
   description?: string;
   images?: string[]; // Now direct URLs from Cloudinary
   originalPrice: number;
@@ -38,9 +36,7 @@ export interface Product {
 export interface Category {
   _id: string;
   name: string;
-  slug: {
-    current: string;
-  };
+  slug: string | { current: string }; // Support both formats
   description?: string;
   image?: string; // Direct URL from Cloudinary
   imageUrl?: string; // Alternative field for image URL
@@ -53,9 +49,7 @@ export interface Category {
 export interface Brand {
   _id: string;
   name: string;
-  slug: {
-    current: string;
-  };
+  slug: string | { current: string }; // Support both formats
   description?: string;
   logo?: string; // Direct URL from Cloudinary
   imageUrl?: string; // Alternative field for logo URL

@@ -46,31 +46,44 @@ const ShareBadge = ({ product }: { product?: Product }) => {
   };
 
   const handleCompare = () => {
-    // Try multiple ways to get the product identifier
-    let productId = null;
-    
-    if (product?.slug?.current) {
-      productId = product.slug.current;
-    } else if (product?._id) {
-      productId = product._id;
-    } else {
-      // Extract slug from current URL as fallback
-      const currentPath = window.location.pathname;
-      const pathSegments = currentPath.split('/');
-      const slugFromUrl = pathSegments[pathSegments.length - 1];
+    try {
+      // Try multiple ways to get the product identifier
+      let productId = null;
       
-      if (slugFromUrl && slugFromUrl !== 'product') {
-        productId = slugFromUrl;
+      console.log('Compare clicked for product:', product);
+      
+      if (product?.slug) {
+        // Handle both MongoDB string and Sanity object formats
+        productId = typeof product.slug === 'string' ? product.slug : product.slug.current;
+        console.log('Using slug:', productId);
+      } else if (product?._id) {
+        productId = product._id;
+        console.log('Using _id:', productId);
+      } else {
+        // Extract slug from current URL as fallback
+        const currentPath = window.location.pathname;
+        const pathSegments = currentPath.split('/');
+        const slugFromUrl = pathSegments[pathSegments.length - 1];
+        
+        if (slugFromUrl && slugFromUrl !== 'product') {
+          productId = slugFromUrl;
+          console.log('Using URL slug:', productId);
+        }
       }
+      
+      if (!productId) {
+        console.error('No product ID found');
+        modal.alert("Cannot identify product for comparison. Please try again.");
+        return;
+      }
+      
+      // Redirect to compare page with product identifier
+      console.log('Redirecting to compare with:', productId);
+      window.location.href = `/compare?products=${encodeURIComponent(productId)}`;
+    } catch (error) {
+      console.error('Compare button error:', error);
+      modal.alert("An error occurred. Please try again.");
     }
-    
-    if (!productId) {
-      modal.alert("Cannot identify product for comparison. Please try again.");
-      return;
-    }
-    
-    // Redirect to compare page with product identifier
-    window.location.href = `/compare?products=${productId}`;
   };
 
   return (
@@ -117,9 +130,11 @@ const ShareBadge = ({ product }: { product?: Product }) => {
       </div>
       <div>
         <button
+          type="button"
           onClick={handleCompare}
-          className="flex items-center gap-2 px-4 py-2 bg-custom-sec1 text-custom-navBar font-semibold rounded-lg hover:bg-custom-sec2 hoverEffect transition-colors border border-custom-navBar/20"
+          className="flex items-center gap-2 px-4 py-2 bg-custom-sec1 text-custom-navBar font-semibold rounded-lg hover:bg-custom-sec2 hoverEffect transition-colors border border-custom-navBar/20 cursor-pointer"
           title="Add to comparison list"
+          aria-label="Add product to comparison"
         >
           <MdAddToPhotos className="text-base" />
           <span className="text-sm">Add to Compare</span>

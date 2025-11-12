@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { stripe, verifyStripeSignature } from '@/lib/stripe';
+import { verifyStripeSignature } from '@/lib/stripe';
 import dbConnect from '@/lib/db';
 import Order from '@/models/Order';
 import Product from '@/models/Product';
+import UserProfile from '@/models/UserProfile';
+import Address from '@/models/Address';
 
 export async function POST(request: NextRequest) {
   try {
@@ -79,7 +81,6 @@ async function handleWebhookEvent(event: any) {
 async function handlePaymentSuccess(paymentIntent: any) {
   await dbConnect();
   try {
-    
     const {
       id,
       amount,
@@ -89,76 +90,80 @@ async function handlePaymentSuccess(paymentIntent: any) {
       created
     } = paymentIntent;
 
-
-    // Check if order already exists to prevent duplicates
-    const existingOrder = await Order.findOne({ paymentIntentId: id });
-    
-    if (existingOrder) {
-      return existingOrder;
-    }
-
     // Parse metadata with error handling
-    const userId = metadata.userId;
-    if (!userId) {
+    const clerkUserId = metadata.userId;
+    if (!clerkUserId) {
       throw new Error('Missing userId in payment intent metadata');
     }
 
-    let items = [];
+    let items: any[] = [];
     try {
       items = JSON.parse(metadata.items || '[]');
-    } catch (e) {
+    } catch {
       items = [];
     }
 
     const subtotal = parseFloat(metadata.subtotal || '0');
     const shippingCost = parseFloat(metadata.shippingCost || '0');
-    
-    let billingAddress = null;
-    let shippingAddress = null;
-    
+
+    let shippingAddressMeta: any = null;
     try {
-      billingAddress = metadata.billingAddress ? JSON.parse(metadata.billingAddress) : null;
-    } catch (e) {
-      // Silent fail for address parsing
-    }
-    
-    try {
-      shippingAddress = metadata.shippingAddress ? JSON.parse(metadata.shippingAddress) : null;
-    } catch (e) {
-      // Silent fail for address parsing
+      shippingAddressMeta = metadata.shippingAddress ? JSON.parse(metadata.shippingAddress) : null;
+    } catch {}
+
+    // Resolve or create the user profile (by email + clerkId)
+    const email = receipt_email || metadata.email || undefined;
+    if (!email) {
+      throw new Error('Missing customer email on payment');
     }
 
-    // Create order in MongoDB
-    const order = {
-      paymentIntentId: id,
-      userId,
-      items: items.map((item: any) => ({
-        productId: item.id,
-        name: item.name,
-        price: item.price,
-        quantity: item.quantity
-      })),
-      subtotal,
-      shippingCost,
-      totalAmount: amount / 100, // Convert from cents
-      currency: currency.toUpperCase(),
-      status: 'paid',
-      paymentStatus: 'succeeded',
-      customerEmail: receipt_email,
-      billingAddress,
-      shippingAddress,
-      createdAt: new Date(created * 1000).toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
+    let userProfile = await UserProfile.findOne({ email });
+    if (!userProfile) {
+      userProfile = await UserProfile.create({ email, clerkId: clerkUserId });
+    } else if (!userProfile.clerkId) {
+      // Backfill clerkId if missing
+      userProfile.clerkId = clerkUserId;
+      await userProfile.save();
+    }
 
+    // Create a shipping address document if we have one
+    let shippingAddressId = undefined as any;
+    if (shippingAddressMeta) {
+      const addrDoc = await Address.create({
+        user: userProfile._id,
+        name: shippingAddressMeta.name || 'Shipping Address',
+        email,
+        streetAddress: shippingAddressMeta.address?.line1 || 'Unknown street',
+        apartment: shippingAddressMeta.address?.line2 || '',
+        city: shippingAddressMeta.address?.city || 'Unknown city',
+        state: shippingAddressMeta.address?.state || 'NA',
+        postalCode: shippingAddressMeta.address?.postal_code || '00000',
+        country: shippingAddressMeta.address?.country || 'US',
+        phone: shippingAddressMeta.phone || 'Not provided',
+        isDefault: false,
+      });
+      shippingAddressId = addrDoc._id;
+    }
 
-    // Save order to MongoDB
-    const result = await Order.create(order);
+    // Map items to existing product refs
+    const products = items
+      .filter((i: any) => i?.id && i?.quantity)
+      .map((i: any) => ({ product: i.id, quantity: i.quantity }));
+
+    // Persist order using the existing Order schema used by admin
+    const orderDoc = await Order.create({
+      user: userProfile._id,
+      products,
+      total: amount / 100, // in base currency
+      status: 'processing',
+      shippingAddress: shippingAddressId,
+      createdAt: new Date(created * 1000),
+    });
 
     // Reduce stock for each purchased item
     await reduceProductStock(items);
 
-    return result;
+    return orderDoc;
 
   } catch (error) {
     console.error('❌ Error handling payment success:', error);

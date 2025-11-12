@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { SignOutButton } from "@clerk/nextjs";
 import { User } from "lucide-react";
@@ -23,6 +23,11 @@ interface DynamicAccountHeaderProps {
 const DynamicAccountHeader = ({ user }: DynamicAccountHeaderProps) => {
 const { isAccountMenuVisible, hideMainMenu } = useAccount();
   const pathname = usePathname();
+  
+  // Memoize the formatted date to avoid recreating on every render
+  const memberSince = useMemo(() => {
+    return new Date(user?.createdAt || Date.now()).toLocaleDateString();
+  }, [user?.createdAt]);
   
   // Hide the header when on specific account sections (not on main account page)
 const shouldHideHeader = (!hideMainMenu && pathname === "/account/account") || (pathname !== "/account/account" && pathname.startsWith("/account/"));
@@ -56,10 +61,7 @@ const shouldHideHeader = (!hideMainMenu && pathname === "/account/account") || (
                 {user?.emailAddress}
               </p>
               <p className="text-sm text-gray-500 mt-1">
-                Member since{" "}
-                {new Date(
-                  user?.createdAt || Date.now()
-                ).toLocaleDateString()}
+                Member since {memberSince}
               </p>
             </div>
           </div>

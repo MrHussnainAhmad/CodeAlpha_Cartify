@@ -5,10 +5,6 @@ import Container from "./Container";
 import Link from "next/link";
 import { Youtube, Github, Linkedin, Facebook, Slack } from "lucide-react";
 import Logo from "./Logo";
-import { getCategories } from "@/lib/api";
-import { Category } from '@/models/Category';
-
-const date = new Date();
 
 interface FooterProps {
   webData: any; // Define a proper type for WebData if available
@@ -16,23 +12,11 @@ interface FooterProps {
 }
 
 const Footer: React.FC<FooterProps> = ({ webData, logo }) => {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [currentYear, setCurrentYear] = useState<number>(new Date().getFullYear());
 
   useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const data = await getCategories();
-        setCategories(data || []);
-      } catch (error) {
-        console.error("Error fetching categories:", error);
-        setCategories([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCategories();
+    // Set year on client side to avoid hydration mismatch
+    setCurrentYear(new Date().getFullYear());
   }, []);
 
   return (
@@ -146,28 +130,6 @@ const Footer: React.FC<FooterProps> = ({ webData, logo }) => {
           </div>
 
           <div>
-            <h3 className="font-bold text-gray-900 mb-4">Categories</h3>
-            <ul className="space-y-2">
-              {categories && categories.length > 0 ? (
-                categories.map((category: Category) => (
-                  <li key={category._id}>
-                    <Link
-                      href={`/shop/category/${category.slug.current}`}
-                      className="text-gray-600 hover:text-red-500 transition-colors"
-                    >
-                      {category.name}
-                    </Link>
-                  </li>
-                ))
-              ) : (
-                <li>
-                  <span className="text-gray-500">No categories available</span>
-                </li>
-              )}
-            </ul>
-          </div>
-
-          <div>
             <h3 className="font-bold text-gray-900 mb-4">Contact Info</h3>
             <ul className="space-y-2 text-sm text-gray-600">
               {webData?.contactInfo?.visitUs && <li>Visit Us: {webData.contactInfo.visitUs}</li>}
@@ -178,7 +140,7 @@ const Footer: React.FC<FooterProps> = ({ webData, logo }) => {
           </div>
         </div>
         <div className="border-t border-gray-200 py-6 text-center text-sm text-gray-600">
-          © {date.getFullYear()}{" "}
+          © {currentYear}{" "}
           <span className="font-semibold">{webData?.storeName || "Logo"}</span>. All rights reserved.
         </div>
       </Container>

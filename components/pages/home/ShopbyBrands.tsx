@@ -46,7 +46,7 @@ const ShopbyBrands = async () => {
         {brands?.map((brand: Brand) => (
           <Link
             key={brand._id}
-            href={`/shop/brand/${brand.slug?.current}`}
+            href={`/brand/${brand.slug?.current || brand.slug}`}
 className="p-4 border border-gray-300 rounded-md hover:bg-gray-50 hover:border-red-500 hover:shadow-md w-36 h-24 flex items-center justify-center overflow-hidden hoverEffect transition-all duration-300"
           >
             {brand?.logo && typeof brand.logo === 'string' && brand.logo.startsWith('http') ? (

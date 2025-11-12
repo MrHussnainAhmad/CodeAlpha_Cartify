@@ -9,7 +9,7 @@ import AddToCart from "./AddToCart";
 type ProductCardProduct = {
   _id: string;
   name: string;
-  slug: { current: string };
+  slug: string | { current: string }; // Support both MongoDB (string) and Sanity (object) formats
   description?: string;
   images?: any[];
   originalPrice: number;
@@ -21,12 +21,12 @@ type ProductCardProduct = {
   category?: {
     _id: string;
     name: string;
-    slug: { current: string };
+    slug: string | { current: string };
   };
   brand?: {
     _id: string;
     name: string;
-    slug: { current: string };
+    slug: string | { current: string };
   };
   featured?: boolean;
   customAttributes?: any[];
@@ -44,7 +44,7 @@ type ProductCardProps = {
   // New flexible props for direct product data
   _id?: string;
   name?: string;
-  slug?: { current: string };
+  slug?: string | { current: string }; // Support both formats
   description?: string;
   images?: any[];
   originalPrice?: number;
@@ -56,12 +56,12 @@ type ProductCardProps = {
   category?: {
     _id: string;
     name: string;
-    slug: { current: string };
+    slug: string | { current: string };
   };
   brand?: {
     _id: string;
     name: string;
-    slug: { current: string };
+    slug: string | { current: string };
   };
   featured?: boolean;
   customAttributes?: any[];
@@ -79,7 +79,7 @@ const ProductCard = ({ product, ...directProps }: ProductCardProps) => {
   const productData: ProductCardProduct = product || {
     _id: directProps._id || '',
     name: directProps.name || '',
-    slug: directProps.slug || { current: '' },
+    slug: directProps.slug || '',
     description: directProps.description,
     images: directProps.images,
     originalPrice: directProps.originalPrice || 0,
@@ -111,28 +111,49 @@ const ProductCard = ({ product, ...directProps }: ProductCardProps) => {
   };
 
   const imageUrl = getImageUrl();
-
-  // Calculate deal discount amount if product is on deal
-  const dealDiscountAmount = productData?.originalPrice && productData?.isOnDeal && productData?.dealPercentage && productData.dealPercentage > 0
-    ? (productData.originalPrice * productData.dealPercentage) / 100
-    : 0;
-
-  // Calculate regular discount amount
-  const regularDiscountAmount = productData?.originalPrice && productData?.discount && productData.discount > 0
-    ? (productData.originalPrice * productData.discount) / 100 
-    : 0;
-
-  // Use deal discount if product is on deal, otherwise use regular discount
-  const discountAmount = productData?.isOnDeal ? dealDiscountAmount : regularDiscountAmount;
-  const discountPercentage = productData?.isOnDeal ? productData.dealPercentage : productData?.discount;
   
-  // Only show discount if discount exists and is greater than 0
-  const showDiscount = !!(discountPercentage && discountPercentage > 0 && discountAmount > 0);
+  // Helper function to get slug string (handles both MongoDB string and Sanity object formats)
+  const getSlugString = (slug: string | { current: string } | undefined): string => {
+    if (!slug) return '';
+    if (typeof slug === 'string') return slug;
+    return slug.current || '';
+  };
+  
+  const slugString = getSlugString(productData?.slug);
 
-  // Get actual price (discounted if applicable)
-  const actualPrice = showDiscount && productData.originalPrice
-    ? (productData.originalPrice - discountAmount)
-    : productData?.originalPrice || 0;
+  // Calculate price with proper discount logic
+  const calculatePrice = () => {
+    const originalPrice = productData?.originalPrice || 0;
+    
+    // First apply regular discount if any
+    const regularDiscount = productData?.discount || 0;
+    let price = originalPrice - (originalPrice * regularDiscount / 100);
+    
+    // If product is on deal, apply deal discount on top of regular discount (compound)
+    if (productData?.isOnDeal && productData?.dealPercentage && productData.dealPercentage > 0) {
+      price = price - (price * productData.dealPercentage / 100);
+    }
+    
+    return price;
+  };
+  
+  const actualPrice = calculatePrice();
+  
+  // Calculate total discount for display
+  const totalDiscountAmount = productData?.originalPrice ? productData.originalPrice - actualPrice : 0;
+  const showDiscount = totalDiscountAmount > 0;
+  
+  // Get combined discount percentage for badge display
+  const getCombinedDiscountText = () => {
+    if (productData?.isOnDeal && productData?.dealPercentage) {
+      if (productData?.discount && productData.discount > 0) {
+        // Both discounts apply
+        return `${productData.discount}% + ${productData.dealPercentage}% DEAL`;
+      }
+      return `${productData.dealPercentage}% DEAL`;
+    }
+    return productData?.discount ? `${productData.discount}%` : '';
+  };
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 hover:shadow-lg transition-all duration-300 overflow-hidden">
@@ -140,19 +161,19 @@ const ProductCard = ({ product, ...directProps }: ProductCardProps) => {
         {/* Deal Badge - Priority for deal products */}
         {productData?.isOnDeal && productData?.dealPercentage && productData.dealPercentage > 0 && (
           <div className="absolute top-2.5 -left-2.5 bg-red-600 text-white px-4 py-1 text-xs font-semibold rounded-full z-10">
-            DEAL: {productData.dealPercentage}% OFF
+            {getCombinedDiscountText()} OFF
           </div>
         )}
         
         {/* Regular Discount Badge - Only show if not on deal and discount exists */}
-        {!productData?.isOnDeal && showDiscount && discountPercentage && discountPercentage > 0 && (
+        {!productData?.isOnDeal && showDiscount && (
           <div className="absolute top-2.5 -left-2.5 bg-purple-600 text-white px-4 py-1 text-xs font-semibold rounded-full z-10">
-            Save: ${Math.round(discountAmount)} (-{discountPercentage}%)
+            Save: ${totalDiscountAmount.toFixed(0)} (-{getCombinedDiscountText()})
           </div>
         )}
         
         {/* Product Image */}
-        <Link href={`/product/${productData?.slug?.current}`} className="block">
+        <Link href={`/product/${slugString}`} className="block">
           <div className="aspect-square overflow-hidden bg-gray-50">
             <img
               src={imageUrl || '/placeholder-product.jpg'}
@@ -172,7 +193,7 @@ const ProductCard = ({ product, ...directProps }: ProductCardProps) => {
         )}
 
         {/* Product Name - Single line with ellipsis */}
-        <Link href={`/product/${productData?.slug?.current}`}>
+        <Link href={`/product/${slugString}`}>
           <h3 className="font-medium text-gray-900 text-sm mb-2 truncate hover:text-blue-600 transition-colors">
             {productData?.name || 'Unnamed Product'}
           </h3>
