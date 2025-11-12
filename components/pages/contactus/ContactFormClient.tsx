@@ -45,12 +45,28 @@ const ContactFormClient: React.FC<ContactFormClientProps> = ({ webData }) => {
       return;
     }
 
+    // Check if EmailJS is properly configured
+    if (!SERVICE_ID || !TEMPLATE_ID || !PUBLIC_KEY || 
+        SERVICE_ID === 'your_service_id_here' || 
+        TEMPLATE_ID === 'your_template_id_here' || 
+        PUBLIC_KEY === 'your_public_key_here') {
+      setStatus({ 
+        type: "error", 
+        message: "EmailJS is not properly configured. Please check your environment variables. Missing: " + 
+          (!SERVICE_ID || SERVICE_ID === 'your_service_id_here' ? 'Service ID, ' : '') +
+          (!TEMPLATE_ID || TEMPLATE_ID === 'your_template_id_here' ? 'Template ID, ' : '') +
+          (!PUBLIC_KEY || PUBLIC_KEY === 'your_public_key_here' ? 'Public Key' : '')
+      });
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const result = await emailjs.sendForm(
-        SERVICE_ID || '',
-        TEMPLATE_ID || '',
+        SERVICE_ID,
+        TEMPLATE_ID,
         form.current,
-        PUBLIC_KEY || ''
+        PUBLIC_KEY
       );
 
       console.log("Email sent successfully:", result.text);
@@ -66,12 +82,13 @@ const ContactFormClient: React.FC<ContactFormClientProps> = ({ webData }) => {
         message: "",
       });
       form.current.reset();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Email sending failed:", error);
+      const errorMessage = error?.text || error?.message || JSON.stringify(error);
       setStatus({
         type: "error",
         message:
-          "Failed to send message. Please try again or contact us directly.",
+          `Failed to send message: ${errorMessage}. Please try again or contact us directly.`,
       });
     } finally {
       setIsLoading(false);
