@@ -1,1 +1,0 @@
-NEXTjs + MongoDb + Cloudinary + Clerk
